@@ -2,547 +2,411 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>SEMLA OPS CENTER v2.0 [CLASSIFIED]</title>
+    <title>SEMLA OPS CENTER v3.0 [DEFCON 1]</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
+        /* --- CORE SYSTEM STYLES --- */
         :root {
-            --bg-color: #050505;
-            --panel-bg: rgba(20, 25, 30, 0.9);
-            --text-main: #e0e0e0;
-            --accent-cyan: #00f3ff;
-            --accent-warn: #ffb700;
-            --accent-alert: #ff2a2a;
-            --grid-line: rgba(0, 243, 255, 0.1);
-            --font-stack: 'Consolas', 'Monaco', monospace;
+            --bg-color: #020202;
+            --panel-bg: rgba(10, 15, 20, 0.85);
+            --text-main: #d0d0d0;
+            --accent-cyan: #0ff;
+            --accent-warn: #f0a500;
+            --accent-crit: #ff2a2a;
+            --grid-line: rgba(0, 255, 255, 0.05);
+            --font-stack: 'Courier New', monospace;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
             font-family: var(--font-stack);
-            margin: 0;
-            padding: 10px;
-            height: 100vh;
-            overflow: hidden;
-            background-image: 
-                linear-gradient(var(--grid-line) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 40px 40px;
+            margin: 0; padding: 10px; height: 100vh; overflow: hidden;
+            background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 50px 50px;
         }
 
-        /* Layout */
+        /* --- LAYOUT --- */
         .grid-container {
             display: grid;
-            grid-template-columns: 300px 1fr 320px;
-            grid-template-rows: 70px 1fr 280px;
-            gap: 10px;
+            grid-template-columns: 320px 1fr 350px;
+            grid-template-rows: 80px 1fr 250px;
+            gap: 12px;
             height: calc(100vh - 20px);
         }
 
-        /* Panels */
         .panel {
             background: var(--panel-bg);
             border: 1px solid #333;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);
             position: relative;
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(5px);
+            display: flex; flex-direction: column;
+            backdrop-filter: blur(4px);
+            transition: box-shadow 0.3s;
         }
+        .panel:hover { box-shadow: 0 0 20px rgba(0, 255, 255, 0.1); }
 
-        /* Cyber Borders */
-        .corner-tl, .corner-tr, .corner-bl, .corner-br {
-            position: absolute;
-            width: 8px; height: 8px;
-            border-color: var(--accent-cyan);
-            border-style: solid;
-            transition: all 0.3s ease;
+        /* --- DECORATIONS --- */
+        .corner {
+            position: absolute; width: 10px; height: 10px;
+            border: 2px solid var(--accent-cyan); transition: 0.3s;
         }
-        .corner-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
-        .corner-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
-        .corner-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
-        .corner-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+        .tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+        .bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+        .br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
 
-        .panel:hover .corner-tl { width: 100%; height: 100%; opacity: 0.1; background: var(--accent-cyan); }
-
-        /* Headers */
         h2 {
-            margin: 0; padding: 10px 15px;
-            background: rgba(0, 243, 255, 0.1);
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent-cyan);
-            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
-            display: flex;
-            justify-content: space-between;
+            margin: 0; padding: 12px; background: rgba(0, 255, 255, 0.05);
+            font-size: 16px; color: var(--accent-cyan);
+            border-bottom: 1px solid #333; letter-spacing: 2px;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* Header Bar */
+        /* --- TOP HEADER --- */
         .top-bar {
-            grid-column: 1 / -1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            border-bottom: 2px solid var(--accent-cyan);
-            background: rgba(0,0,0,0.8);
+            grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 25px; border-bottom: 2px solid var(--accent-cyan);
+            background: linear-gradient(90deg, rgba(0,0,0,0.9), rgba(0,30,30,0.9));
         }
-        .main-title {
-            font-size: 28px;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 10px var(--accent-cyan);
-            letter-spacing: 4px;
+        .title-group h1 { margin: 0; font-size: 32px; letter-spacing: 4px; text-shadow: 0 0 10px var(--accent-cyan); color: #fff; }
+        .countdown-box { text-align: right; font-size: 12px; line-height: 1.4; }
+        .countdown-timer { font-size: 18px; color: var(--accent-warn); font-weight: bold; }
+
+        /* --- MAP & RADAR --- */
+        #map-container { grid-column: 2 / 3; grid-row: 2 / 3; position: relative; overflow: hidden; }
+        #map { width: 100%; height: 100%; filter: grayscale(100%) invert(100%) contrast(1.2); opacity: 0.7; }
+        
+        .radar-sweep {
+            position: absolute; top: 50%; left: 50%; width: 150vh; height: 150vh;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 255, 255, 0.1) 60deg, var(--accent-cyan) 61deg, transparent 62deg);
+            transform: translate(-50%, -50%); border-radius: 50%;
+            animation: radar-spin 4s linear infinite; pointer-events: none; z-index: 500;
+            opacity: 0.3;
         }
-        .blink { animation: blinker 1.5s linear infinite; color: var(--accent-alert); }
+        @keyframes radar-spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* --- LISTS & CONTROLS --- */
+        .scroll-list { overflow-y: auto; flex: 1; padding: 10px; }
+        .item-card {
+            padding: 10px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .item-card:hover { background: rgba(0, 255, 255, 0.1); padding-left: 15px; }
+        .item-card.active { border-left: 4px solid var(--accent-warn); background: rgba(240, 165, 0, 0.1); }
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+        /* --- ACTION BUTTONS --- */
+        .big-btn {
+            width: 100%; padding: 15px; margin-top: 10px; border: 1px solid var(--accent-crit);
+            background: rgba(255, 42, 42, 0.1); color: var(--accent-crit);
+            font-family: var(--font-stack); font-weight: bold; cursor: pointer; text-transform: uppercase;
+            transition: 0.3s;
+        }
+        .big-btn:hover { background: var(--accent-crit); color: #000; box-shadow: 0 0 15px var(--accent-crit); }
+
+        /* --- MODAL --- */
+        #reportModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #111; border: 2px solid var(--accent-warn); padding: 20px; width: 400px;
+            box-shadow: 0 0 50px rgba(240, 165, 0, 0.3); text-align: center;
+        }
+        select, input { width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; font-family: var(--font-stack); }
+
+        /* --- UTILS --- */
+        .blink { animation: blinker 1s infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
-
-        /* Map Area */
-        #map-container {
-            grid-column: 2 / 3;
-            grid-row: 2 / 3;
-            position: relative;
-        }
-        #map { width: 100%; height: 100%; filter: grayscale(100%) contrast(1.2) brightness(0.8); }
-        
-        /* Sidebar: Intel */
-        .intel-list {
-            padding: 10px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-        .intel-card {
-            background: rgba(255,255,255,0.05);
-            margin-bottom: 8px;
-            padding: 10px;
-            border-left: 3px solid #555;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .intel-card:hover {
-            border-left-color: var(--accent-cyan);
-            background: rgba(0, 243, 255, 0.1);
-        }
-        .intel-card.active {
-            border-left-color: var(--accent-warn);
-            border: 1px solid var(--accent-warn);
-        }
-        .rank-badge {
-            float: right;
-            font-weight: bold;
-            color: var(--accent-warn);
-        }
-
-        /* Search & Filter */
-        .controls {
-            padding: 10px;
-            border-bottom: 1px solid #333;
-        }
-        input[type="text"] {
-            width: 100%;
-            background: #111;
-            border: 1px solid var(--accent-cyan);
-            color: var(--accent-cyan);
-            padding: 8px;
-            font-family: var(--font-stack);
-            text-transform: uppercase;
-            box-sizing: border-box;
-        }
-        .filter-btns {
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-        .btn {
-            flex: 1;
-            background: #111;
-            border: 1px solid #444;
-            color: #888;
-            padding: 5px;
-            cursor: pointer;
-            font-size: 10px;
-            text-transform: uppercase;
-        }
-        .btn.active {
-            background: var(--accent-cyan);
-            color: #000;
-            font-weight: bold;
-            border-color: var(--accent-cyan);
-        }
-
-        /* Stats & Logs */
-        .log-terminal {
-            font-size: 11px;
-            padding: 10px;
-            overflow-y: hidden;
-            color: #aaa;
-        }
-        .log-line { margin-bottom: 4px; border-bottom: 1px solid #222; padding-bottom: 2px;}
-        .log-ts { color: var(--accent-cyan); margin-right: 5px; }
-        
-        /* Popup Styling Override */
-        .leaflet-popup-content-wrapper {
-            background: rgba(10, 15, 20, 0.95);
-            color: #fff;
-            border: 1px solid var(--accent-cyan);
-            border-radius: 0;
-            font-family: var(--font-stack);
-        }
-        .leaflet-popup-tip { background: var(--accent-cyan); }
-
-        /* Modal for Detail View */
-        .detail-view {
-            padding: 15px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        .stat-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #444; margin-bottom: 5px; }
+        .log-feed { font-size: 10px; color: #888; padding: 10px; overflow: hidden; }
+        .log-entry { margin-bottom: 3px; border-left: 2px solid #333; padding-left: 5px; }
     </style>
 </head>
 <body>
 
 <div class="grid-container">
     <div class="top-bar panel">
-        <div class="main-title">SEMLA OPS CENTER <span style="font-size:12px; color:var(--accent-cyan); vertical-align: middle;">v2.0</span></div>
-        <div style="text-align: right; font-size: 12px;">
-            <i class="fas fa-satellite-dish"></i> DATA FEED: <span class="blink">LIVE</span><br>
-            TARGET AREA: STOCKHOLM PROPER
+        <div class="title-group">
+            <h1>S.O.C <span style="font-size:14px; color:var(--accent-warn)">v3.0</span></h1>
+        </div>
+        <div style="display:flex; gap: 30px;">
+            <div class="countdown-box">
+                TARGET: FETTISDAGEN 2026<br>
+                <span id="countdown" class="countdown-timer">--:--:--:--</span>
+            </div>
+            <div class="countdown-box" style="text-align: right; color: var(--accent-cyan);">
+                <i class="fas fa-wifi"></i> LINK: SECURE<br>
+                <span class="blink">MONITORING</span>
+            </div>
         </div>
     </div>
 
     <div class="panel">
-        <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
-        <h2><i class="fas fa-crosshairs"></i> TARGET SELECTION</h2>
-        
-        <div class="controls">
-            <input type="text" id="searchInput" placeholder="SEARCH TARGET..." onkeyup="filterList()">
-            <div class="filter-btns">
-                <button class="btn active" onclick="setFilter('all')">ALL</button>
-                <button class="btn" onclick="setFilter('classic')">CLASSIC</button>
-                <button class="btn" onclick="setFilter('modern')">MODERN</button>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <h2><i class="fas fa-list"></i> TARGETS [STOCKHOLM]</h2>
+        <div class="scroll-list" id="targetList">
             </div>
+        <div style="padding: 10px; border-top: 1px solid #333;">
+            <div style="font-size: 10px; color: #666;">FILTER SETTINGS:</div>
+            <button class="big-btn" style="padding: 5px; font-size: 10px; border-color: #444; color: #aaa; margin-top:5px;" onclick="renderTargets()">RESET FILTERS</button>
         </div>
-
-        <div class="intel-list" id="bakeryList">
-            </div>
     </div>
 
     <div class="panel" id="map-container">
-        <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
         <div id="map"></div>
-        <div style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.7); padding: 5px; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-size: 10px;">
-            LAT: 59.3293 N <br> LNG: 18.0686 E
+        <div class="radar-sweep"></div> <div style="position: absolute; top: 15px; left: 15px; z-index: 600; background: rgba(0,0,0,0.6); padding: 8px; border: 1px solid var(--accent-cyan); font-size: 11px;">
+            <i class="fas fa-cloud"></i> ATMOSPHERE: <span id="weather">STABIL</span><br>
+            HETVÄGG-INDEX: <span style="color:var(--accent-warn)">HÖGT</span>
         </div>
     </div>
 
     <div class="panel">
-        <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
-        <h2><i class="fas fa-file-contract"></i> TACTICAL INTEL</h2>
-        <div id="detailPanel" class="detail-view">
-            <p style="color: #666; text-align: center; margin-top: 50px;">> AWAITING TARGET SELECTION <</p>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
-        <h2><i class="fas fa-server"></i> SUPPLY CHAIN STATUS</h2>
-        <div style="padding: 15px; display: flex; align-items: center; justify-content: center; height: 100%;">
-            <div style="width: 100px; height: 100px; position: relative;">
-                <canvas id="doughnutChart"></canvas>
-                <div style="position: absolute; top: 40px; left: 0; width: 100%; text-align: center; font-size: 10px;">
-                    STOCK<br>LEVEL
-                </div>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <h2><i class="fas fa-database"></i> INTEL & ACTIONS</h2>
+        
+        <div style="flex: 1; padding: 15px; display: flex; flex-direction: column;">
+            <div id="intelDisplay" style="flex: 1; border: 1px dashed #333; padding: 10px; margin-bottom: 10px; font-size: 12px; color: #aaa;">
+                > SELECT TARGET TO DECRYPT DATA...
             </div>
-            <div style="margin-left: 20px; font-size: 12px;">
-                <div>MANDELMASSA: <span style="color:var(--accent-cyan)">OPTIMAL</span></div>
-                <div style="margin-top:5px;">GRÄDDE: <span style="color:var(--accent-warn)">LOW</span></div>
-                <div style="margin-top:5px;">KARDEMUMMA: <span style="color:var(--accent-cyan)">STABLE</span></div>
+
+            <div style="border-top: 2px solid #333; padding-top: 10px;">
+                <div style="font-size: 10px; color: var(--accent-crit); font-weight: bold; margin-bottom: 5px;">INCIDENT MANAGEMENT</div>
+                <button class="big-btn" onclick="openModal()">RAPPORTERA AVVIKELSE</button>
             </div>
         </div>
     </div>
 
     <div class="panel">
-        <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
-        <h2><i class="fas fa-chart-line"></i> CONSUMPTION RATE (RPM)</h2>
-        <div style="height: 100%; padding: 10px;">
-            <canvas id="lineChart"></canvas>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <h2><i class="fas fa-box-open"></i> RESERVER</h2>
+        <div style="padding: 10px; height: 100%;">
+            <canvas id="barChart"></canvas>
         </div>
     </div>
 
     <div class="panel">
-        <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <h2><i class="fas fa-wave-square"></i> CONSUMPTION TELEMETRY</h2>
+        <div style="padding: 10px; height: 100%;">
+            <canvas id="waveChart"></canvas>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
         <h2><i class="fas fa-terminal"></i> COMMS LOG</h2>
-        <div id="logFeed" class="log-terminal"></div>
+        <div id="logFeed" class="log-feed"></div>
+    </div>
+</div>
+
+<div id="reportModal">
+    <div class="modal-content">
+        <h2 style="color: var(--accent-crit); border:none; justify-content: center;">AVVIKELSERAPPORT</h2>
+        <p style="font-size: 12px; margin-bottom: 20px;">VARNING: Felaktig rapportering kan leda till degradering.</p>
+        
+        <label style="text-align: left; display: block; font-size: 10px;">PLATS</label>
+        <select id="reportPlace">
+            <option>Lillebrors Bageri</option>
+            <option>Tössebageriet</option>
+            <option>Vete-katten</option>
+            <option>Pesso</option>
+            <option>Eget kök (Hemmagjord)</option>
+        </select>
+
+        <label style="text-align: left; display: block; font-size: 10px;">TYP AV PROBLEM</label>
+        <select id="reportType">
+            <option>TORRT LOCK (Critical)</option>
+            <option>FÖR LITE MANDELMASSA (Severe)</option>
+            <option>GRÄDDE EJ KYLD (Health Hazard)</option>
+            <option>SLUT PÅ LAKTOSFRITT (Operational)</option>
+        </select>
+
+        <button class="big-btn" onclick="submitReport()">TRANSMIT REPORT</button>
+        <button style="background:none; border:none; color: #666; margin-top: 10px; cursor: pointer; font-size: 10px;" onclick="closeModal()">AVBRYT</button>
     </div>
 </div>
 
 <script>
-    // --- 1. DATA DATABASE (Verkliga data 2024/2025) ---
-    const semlaIntel = [
-        { 
-            id: 1, 
-            name: "Skeppsbro Bageri", 
-            lat: 59.3230, lng: 18.0750, 
-            type: "modern", 
-            rank: "TOP TIER",
-            price: "62 SEK",
-            verdict: "Vinnarkandidat 2025. Extremt saftig bulle. Ekologisk.",
-            intel: "Status: CRITICAL. Hög fuktighet i bullen. Mandelmassan är slät men rik."
-        },
-        { 
-            id: 2, 
-            name: "Lillebrors Bageri", 
-            lat: 59.3400, lng: 18.0370, 
-            type: "modern", 
-            rank: "#1 CROWD",
-            price: "58 SEK",
-            verdict: "Publikfavorit. Alltid lång kö. Grovhackad mandel.",
-            intel: "Kö-varning: Extrem. Känd för sin 'crunchy' mandelmassa med rostade bitar."
-        },
-        { 
-            id: 3, 
-            name: "Pesso Bageri", 
-            lat: 59.3285, lng: 18.0050, 
-            type: "modern", 
-            rank: "WINNER 24",
-            price: "55 SEK",
-            verdict: "Vinnare Thatsup 2024. Perfekt balans.",
-            intel: "Högsta betyg för balans mellan grädde och mandel. En taktisk fullträff."
-        },
-        { 
-            id: 4, 
-            name: "Tössebageriet", 
-            lat: 59.3360, lng: 18.0860, 
-            type: "classic", 
-            rank: "LEGEND",
-            price: "60 SEK",
-            verdict: "Klassisk + Semmelwrapens skapare.",
-            intel: "Klassisk elegans. Tillhandahåller även wrappen för fältoperationer."
-        },
-        { 
-            id: 5, 
-            name: "Svedjan Bageri", 
-            lat: 59.3180, lng: 18.0530, 
-            type: "modern", 
-            rank: "ELITE",
-            price: "56 SEK",
-            verdict: "Otroligt fluffig bulle. Högt betyg i tester.",
-            intel: "Bullens densitet är minimal (mycket luftig). Mandelmassan innehåller bittermandel."
-        },
-        { 
-            id: 6, 
-            name: "Vete-Katten", 
-            lat: 59.3330, lng: 18.0560, 
-            type: "classic", 
-            rank: "STANDARD",
-            price: "58 SEK",
-            verdict: "Turistvänlig. Pålitlig. Väldigt klassisk.",
-            intel: "Hög kapacitet. Kan hantera stora volymer. Standardkonfiguration."
-        },
-        { 
-            id: 7, 
-            name: "Ritorno", 
-            lat: 59.3405, lng: 18.0465, 
-            type: "classic", 
-            rank: "VETERAN",
-            price: "58 SEK",
-            verdict: "En av stans bästa klassiska semlor.",
-            intel: "Inga konstigheter. Ren prestanda. Tung grädde."
-        },
-        { 
-            id: 8, 
-            name: "Mr Cake", 
-            lat: 59.3420, lng: 18.0650, 
-            type: "classic", // Fusion egentligen men filter logic...
-            rank: "HEAVY",
-            price: "65 SEK",
-            verdict: "Amerikansk stil. Sötare, tyngre. Cronuts.",
-            intel: "Varning: Hög sockerhalt. Endast för erfarna operatörer."
-        },
-        { 
-            id: 9, 
-            name: "Bergstrands", 
-            lat: 59.3430, lng: 18.0490, 
-            type: "modern",
-            rank: "HIGH",
-            price: "54 SEK",
-            verdict: "Vasastans stolthet. Höga poäng 2024/25.",
-            intel: "Robust konstruktion. Utmärkt mandelmassa."
-        }
+    // --- DATA ---
+    const targets = [
+        { id: 1, name: "Skeppsbro", status: "online", rank: "ELIT", intel: "Saftigast bulle 2025. Varning för långa köer vid lunch.", lat: 59.3230, lng: 18.0750 },
+        { id: 2, name: "Lillebrors", status: "busy", rank: "#1 POP", intel: "Extrem köbildning. Mandelmassan innehåller rostade bitar.", lat: 59.3400, lng: 18.0370 },
+        { id: 3, name: "Tösse", status: "online", rank: "LEGEND", intel: "Hemvist för Semmelwrappen. Klassisk profil.", lat: 59.3360, lng: 18.0860 },
+        { id: 4, name: "Vete-Katten", status: "online", rank: "STD", intel: "Hög kapacitet. Stabil prestanda. Turistvänlig.", lat: 59.3330, lng: 18.0560 },
+        { id: 5, name: "Pesso", status: "warning", rank: "WINNER", intel: "Slut på kardemumma? Rykten obekräftade.", lat: 59.3285, lng: 18.0050 },
+        { id: 6, name: "Ritorno", status: "online", rank: "VET", intel: "Gammaldags miljö. Tung grädde.", lat: 59.3405, lng: 18.0465 }
     ];
 
-    // --- 2. KARTA & UI LOGIK ---
-    const map = L.map('map', {
-        zoomControl: false,
-        attributionControl: false
-    }).setView([59.33, 18.06], 13);
+    // --- MAP SETUP ---
+    const map = L.map('map', { zoomControl: false }).setView([59.332, 18.064], 13);
+    // Dark mode map tiles
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19
-    }).addTo(map);
+    const markers = {};
 
-    let markers = {};
-
-    function initMap() {
-        semlaIntel.forEach(target => {
-            // Skapa anpassad ikon
-            const color = target.rank.includes("WINNER") || target.rank.includes("TOP") ? "#ffb700" : "#00f3ff";
-            const iconHtml = `<div style="
-                width: 12px; height: 12px; 
-                background: ${color}; 
-                border: 2px solid #000; 
-                transform: rotate(45deg); 
-                box-shadow: 0 0 10px ${color};">
-                </div>`;
-            
-            const icon = L.divIcon({
-                className: 'custom-marker',
-                html: iconHtml,
-                iconSize: [16, 16],
-                iconAnchor: [8, 8]
-            });
-
-            const marker = L.marker([target.lat, target.lng], {icon: icon})
-                .addTo(map)
-                .bindPopup(`<b>${target.name}</b><br>${target.rank}`);
-            
-            marker.on('click', () => showDetails(target));
-            markers[target.id] = marker;
-        });
-    }
-
-    function renderList(filter = 'all') {
-        const list = document.getElementById('bakeryList');
-        list.innerHTML = '';
-        const search = document.getElementById('searchInput').value.toLowerCase();
-
-        semlaIntel.forEach(target => {
-            if (filter !== 'all' && target.type !== filter) return;
-            if (!target.name.toLowerCase().includes(search)) return;
-
-            const div = document.createElement('div');
-            div.className = 'intel-card';
-            div.innerHTML = `
-                <span class="rank-badge">${target.rank}</span>
-                <div style="font-weight:bold; color:var(--accent-cyan)">${target.name}</div>
-                <div style="font-size:10px; color:#888;">${target.verdict.substring(0, 30)}...</div>
-            `;
-            div.onclick = () => {
-                map.flyTo([target.lat, target.lng], 15);
-                markers[target.id].openPopup();
-                showDetails(target);
-            };
-            list.appendChild(div);
-        });
-    }
-
-    function showDetails(target) {
-        const panel = document.getElementById('detailPanel');
-        panel.innerHTML = `
-            <h3 style="color:var(--accent-cyan); border-bottom:1px solid #333; padding-bottom:5px;">${target.name}</h3>
-            <div class="stat-row"><span>KLASS:</span> <span>${target.type.toUpperCase()}</span></div>
-            <div class="stat-row"><span>PRIS:</span> <span>${target.price}</span></div>
-            <div class="stat-row"><span>RANKING:</span> <span style="color:var(--accent-warn)">${target.rank}</span></div>
-            
-            <br>
-            <strong style="color:var(--accent-cyan)">>>> ANALYS:</strong>
-            <p>${target.verdict}</p>
-            
-            <div style="background:rgba(0,0,0,0.3); padding:10px; border-left:2px solid var(--accent-alert); margin-top:10px; font-family:'Courier New'">
-                <strong>INTEL:</strong> ${target.intel}
-            </div>
-            
-            <button onclick="alert('Simulerar beställning till driftcentralen...')" style="width:100%; margin-top:20px; background:var(--accent-cyan); border:none; padding:10px; font-weight:bold; cursor:pointer;">INITIATE ACQUISITION</button>
-        `;
+    // --- RENDER LISTS & MARKERS ---
+    function renderTargets() {
+        const list = document.getElementById('targetList');
+        list.innerHTML = "";
         
-        // Markera aktiv i listan
-        document.querySelectorAll('.intel-card').forEach(el => el.classList.remove('active'));
+        targets.forEach(t => {
+            // Skapa List Item
+            const color = t.status === 'warning' ? '#f0a500' : (t.status === 'busy' ? '#ff2a2a' : '#0ff');
+            const div = document.createElement('div');
+            div.className = 'item-card';
+            div.innerHTML = `
+                <div>
+                    <span class="status-dot" style="background:${color}"></span>
+                    <strong>${t.name}</strong>
+                </div>
+                <span style="font-size:10px; color:#666;">${t.rank}</span>
+            `;
+            div.onclick = () => selectTarget(t, div);
+            list.appendChild(div);
+
+            // Skapa Map Marker
+            const iconHtml = `<div style="width:10px; height:10px; background:${color}; border-radius:50%; box-shadow:0 0 10px ${color}; border:1px solid #fff;"></div>`;
+            const icon = L.divIcon({ className: 'custom-icon', html: iconHtml, iconSize: [12, 12] });
+            const marker = L.marker([t.lat, t.lng], {icon: icon}).addTo(map).bindPopup(t.name);
+            marker.on('click', () => selectTarget(t, div));
+            markers[t.id] = marker;
+        });
     }
 
-    function filterList() {
-        renderList(currentFilter);
+    function selectTarget(t, el) {
+        // Highlight list
+        document.querySelectorAll('.item-card').forEach(c => c.classList.remove('active'));
+        if(el) el.classList.add('active'); // Om klickat via karta kanske el saknas, men ok för nu.
+
+        // Pan map
+        map.flyTo([t.lat, t.lng], 14);
+        markers[t.id].openPopup();
+
+        // Show Intel
+        const intelPanel = document.getElementById('intelDisplay');
+        const color = t.status === 'warning' ? '#f0a500' : '#0ff';
+        intelPanel.innerHTML = `
+            <h3 style="color:${color}; margin-top:0;">${t.name.toUpperCase()}</h3>
+            <div style="margin-bottom:10px;">STATUS: <span style="color:${color}">${t.status.toUpperCase()}</span></div>
+            <div style="border-left: 2px solid ${color}; padding-left: 10px; color: #ccc;">
+                "${t.intel}"
+            </div>
+            <br>
+            <div style="font-size:10px; color:#666;">COORDS: ${t.lat.toFixed(4)}, ${t.lng.toFixed(4)}</div>
+        `;
     }
 
-    let currentFilter = 'all';
-    function setFilter(type) {
-        currentFilter = type;
-        document.querySelectorAll('.filter-btns .btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-        renderList(type);
-    }
+    // --- COUNTDOWN (FETTISDAGEN 2026: 17 FEB) ---
+    function updateCountdown() {
+        const targetDate = new Date("Feb 17, 2026 00:00:00").getTime();
+        const now = new Date().getTime();
+        const distance = targetDate - now;
 
-    // --- 3. CHARTS & LOGS (Visual Candy) ---
-    
-    // Line Chart (Consumption)
-    const ctxLine = document.getElementById('lineChart').getContext('2d');
-    new Chart(ctxLine, {
-        type: 'line',
-        data: {
-            labels: Array(10).fill(''),
-            datasets: [{
-                label: 'RPM',
-                data: [45, 49, 52, 48, 55, 60, 58, 62, 65, 63],
-                borderColor: '#00f3ff',
-                backgroundColor: 'rgba(0, 243, 255, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { display: false }, y: { display: true, grid: { color: '#222' } } },
-            animation: { duration: 2000 }
+        if (distance < 0) {
+            document.getElementById("countdown").innerText = "H-HOUR ACTIVE";
+            return;
         }
-    });
 
-    // Doughnut (Supply)
-    const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-    new Chart(ctxDoughnut, {
-        type: 'doughnut',
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById("countdown").innerText = 
+            `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+    setInterval(updateCountdown, 1000);
+
+    // --- MODAL LOGIC ---
+    function openModal() { document.getElementById('reportModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('reportModal').style.display = 'none'; }
+    function submitReport() {
+        const place = document.getElementById('reportPlace').value;
+        const type = document.getElementById('reportType').value;
+        closeModal();
+        
+        // Lägg till i loggen
+        addLog(`ALERT: ${type} reported at ${place}`, true);
+        alert("PACKET SENT. OPERATIONS TEAM NOTIFIED.");
+    }
+
+    // --- CHARTS (Bar & Wave) ---
+    // Bar Chart (Reserver)
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
         data: {
-            labels: ['Stock', 'Consumed'],
+            labels: ['Mandel', 'Grädde', 'Florsocker', 'Mjölk'],
             datasets: [{
-                data: [75, 25],
-                backgroundColor: ['#00f3ff', '#111'],
+                label: 'Stock %',
+                data: [85, 40, 95, 60],
+                backgroundColor: ['#0ff', '#f0a500', '#0ff', '#0ff'],
                 borderWidth: 0
             }]
         },
-        options: { cutout: '70%', responsive: true, plugins: { legend: { display: false } } }
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { beginAtZero: true, max: 100, grid: {color:'#333'} }, 
+                x: { grid: {display:false} } 
+            }
+        }
     });
 
-    // Log Feed
-    const logs = [
-        "Skeppsbro: Hetvägg protocol initiated",
-        "Lillebrors: Queue length exceeding 15m",
-        "Drone surveillance: Tösse stock low",
-        "System: Calibrating almond sensors",
-        "User 01: Requesting location data",
-        "Alert: Coffee supply critical"
-    ];
+    // Wave Chart (Live)
+    const waveCtx = document.getElementById('waveChart').getContext('2d');
+    const waveChart = new Chart(waveCtx, {
+        type: 'line',
+        data: {
+            labels: Array(20).fill(''),
+            datasets: [{
+                data: Array(20).fill(50),
+                borderColor: '#0ff', borderWidth: 1, tension: 0.5, pointRadius: 0,
+                backgroundColor: 'rgba(0, 255, 255, 0.1)', fill: true
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } },
+            animation: { duration: 0 }
+        }
+    });
 
-    function updateLog() {
+    // --- LIVE SIMULATION ---
+    function addLog(msg, isAlert = false) {
         const feed = document.getElementById('logFeed');
-        const msg = logs[Math.floor(Math.random() * logs.length)];
         const time = new Date().toLocaleTimeString('sv-SE');
         const div = document.createElement('div');
-        div.className = 'log-line';
-        div.innerHTML = `<span class="log-ts">[${time}]</span> ${msg}`;
+        div.className = 'log-entry';
+        div.style.color = isAlert ? 'var(--accent-crit)' : '#888';
+        div.innerHTML = `<span style="color:#444">[${time}]</span> ${msg}`;
         feed.prepend(div);
-        if(feed.children.length > 8) feed.lastChild.remove();
+        if(feed.children.length > 10) feed.lastChild.remove();
     }
-    setInterval(updateLog, 2500);
 
-    // Init
-    initMap();
-    renderList();
+    setInterval(() => {
+        // Uppdatera graf
+        const data = waveChart.data.datasets[0].data;
+        data.push(Math.floor(Math.random() * 30) + 40);
+        data.shift();
+        waveChart.update();
+
+        // Random Logs
+        if(Math.random() > 0.7) {
+            const logs = ["Scanning sector 4...", "Grädde temp: 4.2°C (Optimal)", "User login: admin", "Syncing database...", "Ping: 12ms"];
+            addLog(logs[Math.floor(Math.random() * logs.length)]);
+        }
+    }, 1000);
+
+    renderTargets();
+    updateCountdown();
 
 </script>
 </body>
